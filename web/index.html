@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="de" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebScore Pro - Website Analyse & Sales Tool</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+    <style>
+        body {
+            background-color: #0f172a;
+            color: #f8fafc;
+        }
+        .sidebar-item-active {
+            background-color: #1e293b;
+            border-left: 4px solid #3b82f6;
+        }
+    </style>
+</head>
+<body class="font-sans antialiased">
+    <div class="flex h-screen overflow-hidden">
+        <!-- Sidebar (Desktop & Mobile Overlay) -->
+        <aside id="sidebar" class="fixed inset-y-0 left-0 z-50 w-64 bg-slate-900 border-r border-slate-800 transform -translate-x-full md:relative md:translate-x-0 transition-transform duration-300 ease-in-out flex flex-col">
+            <div class="p-6 flex items-center justify-between">
+                <div>
+                    <h1 class="text-2xl font-bold text-blue-500">WebScore</h1>
+                    <p class="text-xs text-slate-400">Website Analyse & Sales</p>
+                </div>
+                <button class="md:hidden p-2 text-slate-400" onclick="toggleSidebar()">
+                    <i data-lucide="x" class="w-6 h-6"></i>
+                </button>
+            </div>
+            <nav class="flex-1 px-4 space-y-2 mt-4">
+                <button onclick="showView('find')" id="nav-find" class="nav-btn w-full flex items-center space-x-3 px-4 py-3 rounded-lg hover:bg-slate-800 transition sidebar-item-active">
+                    <i data-lucide="search" class="w-5 h-5"></i>
+                    <span>Leads finden</span>
+                </button>
+                <button onclick="showView('add')" id="nav-add" class="nav-btn w-full flex items-center space-x-3 px-4 py-3 rounded-lg hover:bg-slate-800 transition">
+                    <i data-lucide="plus-circle" class="w-5 h-5"></i>
+                    <span>Lead hinzufügen</span>
+                </button>
+                <button onclick="showView('leads')" id="nav-leads" class="nav-btn w-full flex items-center space-x-3 px-4 py-3 rounded-lg hover:bg-slate-800 transition">
+                    <i data-lucide="list" class="w-5 h-5"></i>
+                    <span>Leads Liste</span>
+                </button>
+                <button onclick="showView('settings')" id="nav-settings" class="nav-btn w-full flex items-center space-x-3 px-4 py-3 rounded-lg hover:bg-slate-800 transition">
+                    <i data-lucide="settings" class="w-5 h-5"></i>
+                    <span>Einstellungen</span>
+                </button>
+            </nav>
+            <div class="p-4 border-t border-slate-800">
+                <div class="flex items-center justify-between">
+                    <span class="text-sm font-medium">Free Mode</span>
+                    <label class="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" id="free-mode-toggle" class="sr-only peer">
+                        <div class="w-11 h-6 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                    </label>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="flex-1 flex flex-col min-w-0 overflow-hidden bg-slate-950">
+            <!-- Mobile Header -->
+            <header class="md:hidden flex items-center justify-between p-4 bg-slate-900 border-b border-slate-800">
+                <h1 class="text-xl font-bold text-blue-500">WebScore</h1>
+                <button onclick="toggleSidebar()" class="p-2 rounded-lg hover:bg-slate-800">
+                    <i data-lucide="menu" class="w-6 h-6"></i>
+                </button>
+            </header>
+
+            <div id="view-container" class="flex-1 overflow-y-auto p-6">
+                <!-- Find Leads View -->
+                <section id="view-find" class="view max-w-4xl mx-auto space-y-6">
+                    <div class="flex items-center justify-between">
+                        <h2 class="text-3xl font-bold" id="find-title">Neue Leads finden (Premium)</h2>
+                    </div>
+                    <div class="bg-slate-900 rounded-xl p-6 border border-slate-800 space-y-4">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div class="space-y-2">
+                                <label class="text-sm font-medium text-slate-400">Branche</label>
+                                <input type="text" id="input-branche" placeholder="z.B. Friseur" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 outline-none">
+                            </div>
+                            <div class="space-y-2">
+                                <label class="text-sm font-medium text-slate-400">Ort</label>
+                                <input type="text" id="input-ort" placeholder="z.B. Berlin" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 outline-none">
+                            </div>
+                        </div>
+                        <div id="radius-container" class="space-y-2">
+                            <label class="text-sm font-medium text-slate-400">Radius (Meter)</label>
+                            <input type="number" id="input-radius" value="2000" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 outline-none">
+                        </div>
+                        <button onclick="runFind()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition flex items-center justify-center space-x-2">
+                            <i data-lucide="play" class="w-5 h-5"></i>
+                            <span>Suche starten</span>
+                        </button>
+                    </div>
+                    <div class="bg-slate-950 border border-slate-800 rounded-xl p-4 h-64 overflow-y-auto font-mono text-sm" id="log-container">
+                        <div class="text-slate-500">Log-Ausgabe...</div>
+                    </div>
+                </section>
+
+                <!-- Add Lead View -->
+                <section id="view-add" class="view hidden max-w-2xl mx-auto space-y-6">
+                    <div class="flex items-center justify-between">
+                        <h2 class="text-3xl font-bold">Manueller Lead</h2>
+                    </div>
+                    <div class="bg-slate-900 rounded-xl p-6 border border-slate-800 space-y-4">
+                        <div class="space-y-2">
+                            <label class="text-sm font-medium text-slate-400">Website URL</label>
+                            <input type="url" id="input-manual-url" placeholder="https://beispiel.de" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 outline-none">
+                        </div>
+                        <div class="space-y-2">
+                            <label class="text-sm font-medium text-slate-400">Firmenname (Optional)</label>
+                            <input type="text" id="input-manual-name" placeholder="Firma GmbH" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 outline-none">
+                        </div>
+                        <button onclick="addManualLead()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition">
+                            Hinzufügen
+                        </button>
+                    </div>
+                </section>
+
+                <!-- Leads List View -->
+                <section id="view-leads" class="view hidden max-w-6xl mx-auto space-y-6">
+                    <div class="flex items-center justify-between">
+                        <h2 class="text-3xl font-bold">Leads Liste</h2>
+                        <button onclick="exportLeadsCSV()" class="text-sm bg-slate-800 hover:bg-slate-700 px-4 py-2 rounded-lg transition flex items-center space-x-2">
+                            <i data-lucide="download" class="w-4 h-4"></i>
+                            <span>CSV Export</span>
+                        </button>
+                    </div>
+                    <div class="bg-slate-900 rounded-xl border border-slate-800 overflow-hidden">
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left">
+                                <thead class="bg-slate-800 text-slate-300 text-sm">
+                                    <tr>
+                                        <th class="px-6 py-3 font-medium">Name</th>
+                                        <th class="px-6 py-3 font-medium">URL</th>
+                                        <th class="px-6 py-3 font-medium">Status</th>
+                                        <th class="px-6 py-3 font-medium">Score</th>
+                                        <th class="px-6 py-3 font-medium text-right">Aktionen</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="leads-table-body" class="divide-y divide-slate-800">
+                                    <!-- Leads will be injected here -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Settings View -->
+                <section id="view-settings" class="view hidden max-w-2xl mx-auto space-y-6">
+                    <div class="flex items-center justify-between">
+                        <h2 class="text-3xl font-bold">Einstellungen</h2>
+                    </div>
+                    <div class="bg-slate-900 rounded-xl p-6 border border-slate-800 space-y-6">
+                        <div class="space-y-4">
+                            <h3 class="text-lg font-semibold border-b border-slate-800 pb-2">API Keys</h3>
+                            <div class="space-y-2">
+                                <label class="text-sm font-medium text-slate-400">Gemini API Key (Analyse & Free Gen)</label>
+                                <input type="password" id="key-gemini" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 outline-none">
+                            </div>
+                            <div class="space-y-2">
+                                <label class="text-sm font-medium text-slate-400">OpenAI API Key (Premium Gen)</label>
+                                <input type="password" id="key-openai" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 outline-none">
+                            </div>
+                            <div class="space-y-2">
+                                <label class="text-sm font-medium text-slate-400">Google Places API Key (Premium Suche)</label>
+                                <input type="password" id="key-google" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 outline-none">
+                            </div>
+                        </div>
+                        <button onclick="saveSettings()" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 rounded-lg transition">
+                            Speichern
+                        </button>
+                    </div>
+                </section>
+            </div>
+        </main>
+    </div>
+
+    <!-- Scripts -->
+    <script src="app.js"></script>
+    <script>
+        lucide.createIcons();
+    </script>
+</body>
+</html>
