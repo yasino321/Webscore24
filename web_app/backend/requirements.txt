@@ -1,0 +1,15 @@
+fastapi==0.111.0
+uvicorn==0.30.1
+sqlalchemy==2.0.30
+passlib[bcrypt]==1.7.4
+python-jose[cryptography]==3.3.0
+python-multipart==0.0.9
+requests==2.32.3
+beautifulsoup4==4.12.3
+playwright==1.44.0
+google-generativeai==0.5.4
+openai==1.30.3
+pillow==10.3.0
+reportlab==4.2.0
+python-dotenv==1.0.1
+googlemaps==4.10.0
